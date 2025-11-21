@@ -1,0 +1,78 @@
+package com.debaterr.app.authresouce.config.auth;
+
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+
+@Component
+public class MultiIssueJwtConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+
+    @Value("${app.auth.google.client-id}")
+    private String googleClientId;
+
+    @Value("${spring.security.oauth2.resourceserver.issuers.google.issuer-uri}")
+    private String googleJwtDecoderUri;
+
+    @Override
+    public AbstractAuthenticationToken convert(Jwt jwt) {
+        String issuer = jwt.getClaim("iss").toString();
+        Collection<GrantedAuthority> authority = getAuthority(jwt, issuer);
+        JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, authority);
+        jwtAuthenticationToken.setDetails(buildAuthenticationDetails(jwt, issuer));
+        // TODO: set user details from db
+        // TODO: set username password for new user
+        return jwtAuthenticationToken;
+    }
+
+    private Collection<GrantedAuthority> getAuthority(Jwt jwt, String issuer) {
+        Collection<GrantedAuthority> authorities = new HashSet<>();
+
+        if (googleJwtDecoderUri.equals(issuer)) {
+            // Extract Google-specific authorities
+            String email = jwt.getClaimAsString("email");
+            if (email != null) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_GOOGLE_USER"));
+            }
+            // Check audience
+            if (jwt.getAudience() != null && jwt.getAudience().contains(googleClientId)) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_VALID_GOOGLE_CLIENT"));
+            }
+        }
+        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        return authorities;
+    }
+
+
+    private Map<String, Object> buildAuthenticationDetails(Jwt jwt, String issuer) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("issuer", issuer);
+        details.put("tokenType", "JWT");
+        details.put("issuedAt", jwt.getIssuedAt());
+        details.put("expiresAt", jwt.getExpiresAt());
+
+        if ("https://accounts.google.com".equals(issuer)) {
+            details.put("provider", "GOOGLE");
+            details.put("email", jwt.getClaimAsString("email"));
+            details.put("name", jwt.getClaimAsString("name"));
+        } else if ("https://www.facebook.com".equals(issuer)) {
+            details.put("provider", "META");
+            details.put("user_id", jwt.getClaimAsString("user_id"));
+        }
+        else if ("https://www.debaterr.com".equals(issuer)) {
+            details.put("provider", "DEBATER");
+            details.put("user_id", jwt.getClaimAsString("user_id"));
+        }
+        return details;
+    }
+}
