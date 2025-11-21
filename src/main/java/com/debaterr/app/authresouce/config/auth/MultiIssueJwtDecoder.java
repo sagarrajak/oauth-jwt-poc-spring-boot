@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 
 import static org.springframework.security.config.Elements.JWT;
 
-@Component
 public class MultiIssueJwtDecoder implements JwtDecoder {
     private final JwtDecoder googleDecoder;
     private final JwtDecoder ourCustomDecoder;
