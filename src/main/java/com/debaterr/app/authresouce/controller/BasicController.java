@@ -25,7 +25,7 @@ public class BasicController {
         profile.put("name", jwt.getClaimAsString("name"));
         profile.put("provider", getProviderFromIssuer(issuer));
         return ResponseEntity.ok(profile);
-    }
+     }
 
     private String getProviderFromIssuer(String issuer) {
         if ("https://accounts.google.com".equals(issuer)) {

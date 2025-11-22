@@ -1,5 +1,11 @@
 package com.debaterr.app.authresouce.config.auth;
 
+import com.nimbusds.jose.Algorithm;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.OctetSequenceKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,9 +13,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtDecoders;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.web.SecurityFilterChain;
 
 import javax.crypto.SecretKey;
@@ -68,5 +74,30 @@ public class SecurityConfig {
 
     @Bean JwtDecoder getJwtDecoder() {
         return new MultiIssueJwtDecoder(googleJwtDecoder(), ourSecretKeyJwtDecoder());
+    }
+
+    @Bean
+    public JWKSource<SecurityContext> jwkSource() {
+        SecretKey secretKey = new SecretKeySpec(
+                ourSecretKey.getBytes(StandardCharsets.UTF_8),
+                "HmacSHA256");
+
+        // wrap the SecretKey in a Nimbus JWK
+        OctetSequenceKey jwk = new OctetSequenceKey.Builder(secretKey)
+                .algorithm(new Algorithm("HS256"))
+                .build();
+
+        return new ImmutableJWKSet<>(new JWKSet(jwk));
+    }
+
+    /* 2. Make NimbusJwtEncoder injectable */
+    @Bean
+    public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
+        return new NimbusJwtEncoder(jwkSource);
+    }
+
+    @Bean
+    PasswordEncoder getPasswordEncode() {
+        return new BCryptPasswordEncoder();
     }
 }

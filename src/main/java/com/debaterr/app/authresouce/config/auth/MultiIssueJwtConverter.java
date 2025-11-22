@@ -1,6 +1,8 @@
 package com.debaterr.app.authresouce.config.auth;
 
 
+import com.debaterr.app.authresouce.repository.UserRepository;
+import com.debaterr.app.authresouce.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -24,6 +26,15 @@ public class MultiIssueJwtConverter implements Converter<Jwt, AbstractAuthentica
     @Value("${spring.security.oauth2.resourceserver.issuers.google.issuer-uri}")
     private String googleJwtDecoderUri;
 
+    @Value("${spring.security.oauth2.resourceserver.issuers.debaterr.issuer-uri}")
+    private String debaterrDecoderUri;
+
+    private final UserService userService;
+
+    public MultiIssueJwtConverter(UserService userService) {
+        this.userService = userService;
+    }
+
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
         String issuer = jwt.getClaim("iss").toString();
@@ -31,7 +42,6 @@ public class MultiIssueJwtConverter implements Converter<Jwt, AbstractAuthentica
         JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, authority);
         jwtAuthenticationToken.setDetails(buildAuthenticationDetails(jwt, issuer));
         // TODO: set user details from db
-        // TODO: set username password for new user
         return jwtAuthenticationToken;
     }
 
@@ -49,6 +59,9 @@ public class MultiIssueJwtConverter implements Converter<Jwt, AbstractAuthentica
                 authorities.add(new SimpleGrantedAuthority("ROLE_VALID_GOOGLE_CLIENT"));
             }
         }
+        else if (debaterrDecoderUri.equals(issuer)) {
+            String email = jwt.getClaimAsString("email");
+        }
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
         return authorities;
     }
@@ -60,7 +73,7 @@ public class MultiIssueJwtConverter implements Converter<Jwt, AbstractAuthentica
         details.put("tokenType", "JWT");
         details.put("issuedAt", jwt.getIssuedAt());
         details.put("expiresAt", jwt.getExpiresAt());
-
+        userService.loadUserByUsername()
         if ("https://accounts.google.com".equals(issuer)) {
             details.put("provider", "GOOGLE");
             details.put("email", jwt.getClaimAsString("email"));

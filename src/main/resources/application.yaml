@@ -9,6 +9,8 @@ spring:
           meta:
             issuer-uri: https://www.facebook.com
             jwk-set-uri: https://www.facebook.com/.well-known/oauth/facebook-security/prof
+          debaterr:
+            issuer-uri: https://www.debaterr.com
 
 
   datasource:
