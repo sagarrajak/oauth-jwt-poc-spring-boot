@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "authuser", uniqueConstraints = {
@@ -20,10 +21,13 @@ import java.util.List;
 public class AuthUser implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    private UUID id;
 
     @Column(name = "first_name", nullable = false)
     private String firstName;
+
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
 
     @Column(name = "last_name", nullable = false)
     private String lastName;
@@ -31,8 +35,11 @@ public class AuthUser implements UserDetails {
     @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(name = "is_disabled", nullable = false)
+    @Column(name = "is_enabled", nullable = false)
     private Boolean isEnabled = true;
+
+    @Column(name = "is_email_verified", nullable = false)
+    private Boolean isEmailVerified = false;
 
     @JsonIgnore
     @Column(nullable = false)
@@ -49,8 +56,4 @@ public class AuthUser implements UserDetails {
 
     }
 
-    @Override
-    public String getUsername() {
-        return this.getUsername();
-    }
 }

@@ -1,5 +1,6 @@
 package com.debaterr.app.authresouce.service;
 
+import com.debaterr.app.authresouce.entity.AuthUser;
 import com.debaterr.app.authresouce.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,6 +19,15 @@ public class UserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> UsernameNotFoundException.fromUsername(username));
+    }
+
+    public AuthUser findUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException(email +" user with email not found!"));
+    }
+
+    public AuthUser saveUser(AuthUser user) {
+        return userRepository.save(user);
     }
 
 }

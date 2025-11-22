@@ -1,7 +1,6 @@
 package com.debaterr.app.authresouce.config.auth;
 
 
-import com.debaterr.app.authresouce.repository.UserRepository;
 import com.debaterr.app.authresouce.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.convert.converter.Converter;
@@ -73,7 +72,8 @@ public class MultiIssueJwtConverter implements Converter<Jwt, AbstractAuthentica
         details.put("tokenType", "JWT");
         details.put("issuedAt", jwt.getIssuedAt());
         details.put("expiresAt", jwt.getExpiresAt());
-        userService.loadUserByUsername()
+        var foundUser = userService.findUserByEmail(jwt.getClaimAsString("email"));
+        details.put("user", foundUser);
         if ("https://accounts.google.com".equals(issuer)) {
             details.put("provider", "GOOGLE");
             details.put("email", jwt.getClaimAsString("email"));

@@ -12,6 +12,6 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<AuthUser, String> {
     Optional<AuthUser> findByUsername(String username);
-    @Query("select u from authuser where u.email ")
+    @Query("SELECT u FROM AuthUser u WHERE LOWER(REPLACE(u.email, ' ', '')) = LOWER(REPLACE(:email, ' ', ''))")
     Optional<AuthUser> findByEmail(String email);
 }
