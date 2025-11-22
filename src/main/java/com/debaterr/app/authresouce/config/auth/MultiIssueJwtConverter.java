@@ -2,6 +2,7 @@ package com.debaterr.app.authresouce.config.auth;
 
 
 import com.debaterr.app.authresouce.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -17,6 +18,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 @Component
+@Slf4j
 public class MultiIssueJwtConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     @Value("${app.auth.google.client-id}")
@@ -36,6 +38,7 @@ public class MultiIssueJwtConverter implements Converter<Jwt, AbstractAuthentica
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
+        log.info("passed jwt is {}", jwt);
         String issuer = jwt.getClaim("iss").toString();
         Collection<GrantedAuthority> authority = getAuthority(jwt, issuer);
         JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, authority);

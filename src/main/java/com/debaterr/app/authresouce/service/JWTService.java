@@ -2,6 +2,7 @@ package com.debaterr.app.authresouce.service;
 
 import com.debaterr.app.authresouce.entity.AuthUser;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -17,11 +18,9 @@ import java.util.stream.Collectors;
 public class JWTService {
 
     private final JwtEncoder jwtEncoder;
-    private final JwtDecoder jwtDecoder;
 
-    public JWTService(JwtEncoder jwtEncoder, JwtDecoder jwtDecoder) {
+    public JWTService(@Qualifier("jwtEncoder") JwtEncoder jwtEncoder) {
         this.jwtEncoder = jwtEncoder;
-        this.jwtDecoder = jwtDecoder;
     }
 
     public String generateAccessToken(AuthUser authUser) {

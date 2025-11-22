@@ -4,16 +4,13 @@ import com.debaterr.app.authresouce.pojo.AuthLoginRequest;
 import com.debaterr.app.authresouce.pojo.AuthResponse;
 import com.debaterr.app.authresouce.pojo.SignupRequest;
 import com.debaterr.app.authresouce.service.AuthService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
+@Slf4j
 public class AuthController {
     private final AuthService authService;
 
@@ -28,6 +25,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public AuthResponse signup(@RequestBody AuthLoginRequest authLoginRequest) {
+        log.info("user coming here");
+        log.info("username {} password {}", authLoginRequest.getUsername(), authLoginRequest.getPassword());
         return authService.login(authLoginRequest.getUsername(), authLoginRequest.getPassword());
     }
 

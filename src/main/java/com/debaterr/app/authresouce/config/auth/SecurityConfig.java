@@ -1,20 +1,24 @@
 package com.debaterr.app.authresouce.config.auth;
 
-import com.nimbusds.jose.Algorithm;
 import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.OctetSequenceKey;
+import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.*;
@@ -23,9 +27,15 @@ import org.springframework.security.web.SecurityFilterChain;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.UUID;
 
 @Configuration
 @EnableWebSecurity
+@Slf4j
 public class SecurityConfig {
     @Value("${app.auth.google.client-id}")
     private String googleClientId;
@@ -37,9 +47,11 @@ public class SecurityConfig {
     private String ourSecretKey;
 
     private final MultiIssueJwtConverter jwtConverter;
+    private final JwtDecoder jwtDecoder;
 
-    public SecurityConfig(MultiIssueJwtConverter jwtConverter) {
+    public SecurityConfig(MultiIssueJwtConverter jwtConverter, JwtConfig jwtConfig, @Qualifier("jwtDecoder") JwtDecoder jwtDecoder) {
         this.jwtConverter = jwtConverter;
+        this.jwtDecoder = jwtDecoder;
     }
 
     @Bean
@@ -64,39 +76,10 @@ public class SecurityConfig {
     }
 
 
-    public JwtDecoder ourSecretKeyJwtDecoder() {
-        SecretKey secretKey = new SecretKeySpec(
-                ourSecretKey.getBytes(StandardCharsets.UTF_8),
-                "HmacSHA256"
-        );
-
-        return NimbusJwtDecoder.withSecretKey(secretKey)
-                .build();
-    }
-
     @Bean JwtDecoder getJwtDecoder() {
-        return new MultiIssueJwtDecoder(googleJwtDecoder(), ourSecretKeyJwtDecoder());
+        return new MultiIssueJwtDecoder(googleJwtDecoder(), this.jwtDecoder);
     }
 
-    @Bean
-    public JWKSource<SecurityContext> jwkSource() {
-        SecretKey secretKey = new SecretKeySpec(
-                ourSecretKey.getBytes(StandardCharsets.UTF_8),
-                "HmacSHA256");
-
-        // wrap the SecretKey in a Nimbus JWK
-        OctetSequenceKey jwk = new OctetSequenceKey.Builder(secretKey)
-                .algorithm(new Algorithm("HS256"))
-                .build();
-
-        return new ImmutableJWKSet<>(new JWKSet(jwk));
-    }
-
-    /* 2. Make NimbusJwtEncoder injectable */
-    @Bean
-    public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
-        return new NimbusJwtEncoder(jwkSource);
-    }
 
     @Bean
     PasswordEncoder getPasswordEncode() {
@@ -104,7 +87,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) throws Exception {
+        CustomAuthenticationProvider customAuthenticationProvider = new CustomAuthenticationProvider(userDetailsService, passwordEncoder);
+        ProviderManager providerManager = new ProviderManager(customAuthenticationProvider);
+        return providerManager;
     }
+
+//    @Bean
+//    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+//        return config.getAuthenticationManager();
+//    }
 }
